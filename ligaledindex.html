@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle de LED - ESP32</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 350px;
+      width: 100%;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 25px;
+      color: #666;
+    }
+
+    .btn-container {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn-on {
+      background-color: #28a745;
+      color: white;
+    }
+
+    .btn-on:hover {
+      background-color: #218838;
+    }
+
+    .btn-off {
+      background-color: #dc3545;
+      color: white;
+    }
+
+    .btn-off:hover {
+      background-color: #c82333;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Painel de Controle</h2>
+    <div class="status" id="ledStatus">Status: Carregando...</div>
+
+    <div class="btn-container">
+      <button class="btn-on" onclick="setLed(1)">Ligar</button>
+      <button class="btn-off" onclick="setLed(0)">Desligar</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Configurações extraídas do seu projeto
+    const firebaseConfig = {
+      databaseURL: "https://casa-adaptada-default-rtdb.europe-west1.firebasedatabase.app"
+    };
+
+    // Inicializa o Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const ledRef = ref(database, 'led');
+
+    const statusElement = document.getElementById('ledStatus');
+
+    // Escuta alterações na chave "led" em tempo real
+    onValue(ledRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val === 1) {
+        statusElement.innerText = "Status: LIGADO";
+        statusElement.style.color = "#28a745";
+      } else if (val === 0) {
+        statusElement.innerText = "Status: DESLIGADO";
+        statusElement.style.color = "#dc3545";
+      } else {
+        statusElement.innerText = "Status: Desconhecido";
+        statusElement.style.color = "#666";
+      }
+    });
+
+    // Função para alterar o valor no Firebase
+    window.setLed = function(val) {
+      set(ledRef, val)
+        .catch((error) => {
+          console.error("Erro ao atualizar o Firebase:", error);
+          alert("Erro ao enviar comando!");
+        });
+    };
+  </script>
+</body>
+</html>
