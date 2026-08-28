@@ -51,7 +51,11 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     .btn-on {
@@ -71,44 +75,39 @@
     .btn-off:hover {
       background-color: #c82333;
     }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
   </style>
+
+  <!-- Bibliotecas do Firebase (Compat/Legacy para garantir fácil carregamento) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
   <div class="card">
     <h2>Painel de Controle</h2>
-    <div class="status" id="ledStatus">Status: Carregando...</div>
+    <div class="status" id="ledStatus">Status: Conectando...</div>
 
     <div class="btn-container">
-      <button class="btn-on" onclick="setLed(1)">Ligar</button>
-      <button class="btn-off" onclick="setLed(0)">Desligar</button>
+      <button class="btn-on" onclick="setLed(1)">LIGAR</button>
+      <button class="btn-off" onclick="setLed(0)">DESLIGAR</button>
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    // Configurações extraídas do seu projeto
+  <script>
+    // Configurações do Firebase
     const firebaseConfig = {
       databaseURL: "https://casa-adaptada-default-rtdb.europe-west1.firebasedatabase.app"
     };
 
     // Inicializa o Firebase
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-    const ledRef = ref(database, 'led');
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const ledRef = database.ref('led');
 
     const statusElement = document.getElementById('ledStatus');
 
-    // Escuta alterações na chave "led" em tempo real
-    onValue(ledRef, (snapshot) => {
+    // Escuta alterações na chave "led" no Firebase em tempo real
+    ledRef.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val === 1) {
         statusElement.innerText = "Status: LIGADO";
@@ -117,19 +116,18 @@
         statusElement.innerText = "Status: DESLIGADO";
         statusElement.style.color = "#dc3545";
       } else {
-        statusElement.innerText = "Status: Desconhecido";
+        statusElement.innerText = "Status: Desconhecido (" + val + ")";
         statusElement.style.color = "#666";
       }
     });
 
-    // Função para alterar o valor no Firebase
-    window.setLed = function(val) {
-      set(ledRef, val)
-        .catch((error) => {
-          console.error("Erro ao atualizar o Firebase:", error);
-          alert("Erro ao enviar comando!");
-        });
-    };
+    // Função executada ao clicar nos botões
+    function setLed(valor) {
+      ledRef.set(valor).catch((error) => {
+        console.error("Erro ao atualizar o Firebase:", error);
+        alert("Erro ao enviar comando para o Firebase!");
+      });
+    }
   </script>
 </body>
 </html>
